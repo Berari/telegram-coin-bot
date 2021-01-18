@@ -1,0 +1,23 @@
+Date:
+Start time:
+Bot id:
+
+1.link:
+  time:
+  revenue RUB:
+2.link:
+  time:
+  revenue RUB:
+3.link:
+  time:
+  revenue RUB:
+
+.........
+
+Result:
+ 1.Date:
+ 2.Stop time:
+ 3.average time:
+ 4.average revenue RUB:
+ 5.Time work:
+__________________________________________________________________________
