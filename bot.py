@@ -17,9 +17,41 @@ import os
 import sqlite3
 import collections
 import random
+import string
+import sys
 
 
 
+
+def no_task(x, cur, opts, client, driver, time_list, earnings_list, cycles_passed):
+
+    print('Заданий больше нет. Бот ожидает заданние')
+    driver.quit()
+
+    if len(time_list) > 0 and len(earnings_list) > 0 and cycles_passed > 0:
+        average_time = sum(time_list) / len(time_list)
+        average_balance = sum(earnings_list) / len(earnings_list)
+
+        print('Всего пройденно циклов: ' + str(cycles_passed) + '\nСреднее время цикла: ' + str(average_time) + " \nЗаработанно: " + str(average_balance))
+    listening_messages(x, cur, opts, client)
+
+
+def balance(client):
+    client.send_message('LTC Click Bot', '💰 Balance')
+    sleep(0.7)
+    dp = client.get_entity('LTC Click Bot')
+    messages = client.get_messages(dp, limit=1)
+
+    for message in messages:
+        
+        text = message.message.split(':')[1].split('LTC')[0]
+
+    balance = text.split()
+    balance = ''.join(balance)
+    balance = float(balance)
+    print(balance)
+    
+    return balance
 
 
 def wating(x, opts, cur, client):
@@ -55,22 +87,25 @@ def start_client(x):
 
     return client
 
-def browser(driver, url):
+def browser(driver, url, time = 0):
     
     try:
         driver.get(url)
-        sleep(1.5)
+        sleep(2)
         time = driver.find_element_by_class_name('timer').text.split('wait')[1].split(' ')[1]
         time = int(time) + 2
-        #print(time)
+        print(time)
 
         sleep(time)
-        driver.close()
 
     except:
         time = 13
         sleep(time)
-        driver.close()
+
+    num_of_tabs = 1
+
+    for x in range(0, num_of_tabs):
+        driver.find_element_by_tag_name('body').send_keys(Keys.COMMAND + 'W')
 
 def checking_link_list(linkl_list):
 
@@ -88,17 +123,15 @@ def checking_link_list(linkl_list):
 
 def listening_messages(x, cur, opts, client):
 
-    task = []
-
 
     while True:
         
-        time = random.randint(1,10)
+        time = random.randint(10, 60)
 
         sleep(time)
 
-        client.send_message('LTC Click Bot', '🖥 Visit sites')
-        sleep(1.5)
+        #client.send_message('LTC Click Bot', '🖥 Visit sites')
+        
         dp = client.get_entity('LTC Click Bot')
         messages = client.get_messages(dp, limit=1)
         for message1 in messages:
@@ -107,13 +140,12 @@ def listening_messages(x, cur, opts, client):
         
         if text == 'Sorry, there are no new ads available. ':
             print('заданий нет')
-            task.append('1')
 
+        if text == 'There is a new site for you to /visit! 🖥':
+            print('Есть новое задание')
+            bot(x, opts, cur, client)
+            
 
-        if len(task) >= 4:
-            task = []
-            print('заданий больше нет')
-            main(x = x + 1 )
 
 def method_2(x, opts, cur, client):
     while True:
@@ -141,6 +173,8 @@ def method_2(x, opts, cur, client):
             print(url)
 
 def bot(x, opts, cur, client):
+
+    earnings_list = []
     time_list = []
     cycles_passed = 0
     driver = Firefox(options=opts)
@@ -150,13 +184,13 @@ def bot(x, opts, cur, client):
         while True:
 
             startTime = time()
-            #print(startTime)
+            start_balance = balance(client)
 
             try:
-                time1 = random.randint(1, 3)
+                time1 = random.randint(1, 2)
                 sleep(time1)
                 client.send_message('LTC Click Bot', '🖥 Visit sites')
-                sleep(2)
+                sleep(1.5)
 
                 dp = client.get_entity('LTC Click Bot')
                 messages = client.get_messages(dp, limit=1)
@@ -169,41 +203,48 @@ def bot(x, opts, cur, client):
                 
                 browser(driver,url)
                 
+                end_balance = balance(client)
+                total_balance = end_balance - start_balance
+                total_balance = total_balance * 10481
+                earnings_list.append(total_balance)
+
 
                 endTime = time() #время конца замера
                 totalTime = endTime - startTime #вычисляем затраченное время
                 print(totalTime)
                 time_list.append(totalTime)
 
-                #if text == 'There is a new site for you to /visit! 🖥':
-                    #print('___________________________________________\n')
-                    #print('messages')
-                    #print('___________________________________________\n')
             except:
-                pass
+
+                bot(x, opts, cur, client)
+
+                
+               
         
             if cycles_passed >= 5:
-                i = 0
-                a = checking_link_list(link_list)
+                
+                checking_link_list = checking_link_list(link_list)
                 link_list = []
 
-                if a :
-
-                    average_time = sum(time_list) / len(time_list)
-
-                    print('заданий боль нет')
-                    print('Всего пройденно циклов: ' + str(cycles_passed) + ' Среднее время цикла: ' + str(average_time))
-
-                    print('бот ожидает новые задания')
-                    wating(x, opts, cur, client)
+                if checking_link_list == True :
+                    
+                    no_task(x, cur, opts, client, driver, time_list, earnings_list, cycles_passed)
 
                     break
             
             cycles_passed = cycles_passed + 1
-            print('Цикл пройден за: ' + str(totalTime) + ' Циклов пройдено: '+ str(cycles_passed))
+            print('Цикл пройден за: ' + str(totalTime) + ' Циклов пройдено: '+ str(cycles_passed) + ' Заработанно: '+ str(total_balance))
 
     except:
-        print('ошибка')    
+        i = i +1
+        if i >= 5:
+            i = 0
+            no_task(x, cur, opts, client, driver, time_list, earnings_list, cycles_passed)
+
+
+        print('ошибка')
+        bot(x, opts, cur, client)  
+            
 
 def main(x):
 
@@ -215,11 +256,15 @@ def main(x):
     assert opts.headless
 
     client = start_client(x)
-
+    #balance(client)
     bot(x, opts, cur, client)
     #method_2(x, opts, cur, client)
 
     
 
 if __name__ == "__main__":
-    main(1)
+
+    x = sys.argv
+    x = int(x[1])
+    print(x)
+    main(x)
